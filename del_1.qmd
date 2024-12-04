@@ -28,6 +28,7 @@ R er et kraftig og fleksibelt programmeringsspråk som er spesielt utviklet for 
 Et av R's største styrker er evnen til å lage vakre visualiseringer. Nedenfor er et eksempel på en visualisering av data fra `penguins`-datasettet:
 
 ```{r}
+install.packages(c("ggplot2", "palmerpenguins", "ggthemes"))
 library(ggplot2)
 library(palmerpenguins)
 library(ggthemes)

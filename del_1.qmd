@@ -1,0 +1,216 @@
+---
+title: "R workshop - del 1"
+author: "Gakro"
+format: 
+  html:
+    toc: TRUE
+---
+
+# Hvorfor bruke R?
+
+R er et kraftig og fleksibelt programmeringsspråk som er spesielt utviklet for statistisk analyse og datavisualisering. Her er noen av fordelene og ulempene med å bruke R:
+
+## Fordeler:
+- **Stor mengde statistiske metoder**: R har et bredt spekter av innebygde funksjoner og pakker for alt fra enkle beskrivelser til avanserte maskinlæringsmodeller.
+- **Visualiseringer**: Med `ggplot2` og andre pakker kan man lage vakre og komplekse visualiseringer raskt.
+- **Tidyverse-pakker**: R er kjent for sin "tidy" filosofi som gjør datahåndtering og wrangling svært intuitivt.
+- **Støtte for reproducibility**: Verktøy som `rmarkdown` og `Quarto` gjør det enkelt å lage rapporter, interaktive dokumenter og visualiseringer.
+
+## Ulemper:
+- **Minnehåndtering**: R kjører i minnet, noe som betyr at det kan bli tregt eller krasje med veldig store datasett.
+- **Bratt læringskurve**: R har en spesiell syntaks som kan være utfordrende for nybegynnere, spesielt utviklere som er vant til andre språk.
+- **Ikke universelt**: Selv om det er bra for statistikk og dataanalyse, er R mindre egnet for generell programmering eller produksjonsapplikasjoner sammenlignet med Python eller JavaScript.
+
+---
+
+# Visualisering med R
+
+Et av R's største styrker er evnen til å lage vakre visualiseringer. Nedenfor er et eksempel på en visualisering av data fra `penguins`-datasettet:
+
+```{r}
+library(ggplot2)
+library(palmerpenguins)
+library(ggthemes)
+
+ggplot(
+  data = penguins,
+  mapping = aes(x = flipper_length_mm, y = body_mass_g)
+) +
+  geom_point(aes(color = species, shape = species)) +
+  geom_smooth(method = "lm") +
+  labs(
+    title = "Body mass and flipper length",
+    subtitle = "Dimensions for Adelie, Chinstrap, and Gentoo Penguins",
+    x = "Flipper length (mm)", y = "Body mass (g)",
+    color = "Species", shape = "Species"
+  ) +
+  scale_color_colorblind()
+```
+
+Visualiseringen viser forholdet mellom kroppsmassen og flippelengden til pingviner fra tre forskjellige arter.
+
+# Vektorer i R
+
+I R er alt basert på vektorer. Selv en enkelt verdi, som `5`, er egentlig en vektor med ett element. Dette gjør vektorer til en grunnleggende datastruktur som er sentral for hvordan R fungerer.
+
+## Hva er en vektor?
+
+En vektor er en sekvens av elementer som alle har samme datatype. R støtter flere typer vektorer basert på de grunnleggende datatypene:
+
+  - **Logical**: `c(TRUE, FALSE, TRUE)`
+  - **Integer**: `c(1L, 2L, 3L)`
+  - **Double** (numerisk): `c(1.1, 2.2, 3.3)`
+  - **Character**: `c("apple", "banana", "cherry")`
+  - **Complex**: `c(1+2i, 2+3i, 3+4i)`
+
+### Opprette vektorer
+Vektorer opprettes ofte ved hjelp av `c()`-funksjonen, som står for "combine":
+```{r}
+v1 <- c(1, 2, 3)         # Numerisk vektor
+v2 <- c(TRUE, FALSE, TRUE) # Logisk vektor
+```
+
+Andre metoder inkluderer funksjoner som `seq()` og `rep()`:
+```{r}
+v3 <- seq(1, 10, by = 2)  # Lager en sekvens: 1, 3, 5, 7, 9
+v4 <- rep("R", times = 5) # Repeterer verdien "R" fem ganger
+```
+
+### Indeksering av vektorer
+Man kan hente ut elementer fra en vektor ved hjelp av firkantparenteser `[]`:
+```{r}
+v <- c(10, 20, 30, 40, 50)
+v[2]   # Henter ut det andre elementet
+v[1:3] # Henter ut de første tre elementene
+v[c(1, 5)] # Henter ut det første og femte elementet
+```
+
+---
+
+# Soft-typing i R
+
+R bruker **soft typing**, noe som betyr at datatyper kan endres dynamisk, og R vil ofte automatisk konvertere elementer for å sikre konsistens i en vektor.
+
+### Typekonvertering i vektorer
+Når elementer med ulike datatyper kombineres i en vektor, vil R konvertere alle elementene til den mest "fleksible" typen. Denne prosessen kalles **implicit type coercion**.
+
+Reglene for konvertering er som følger:
+
+  1.  Logical → Integer → Double → Character
+  2.  Logical → Complex (hvis komplekse tall er tilstede)
+
+Eksempler:
+```{r}
+v1 <- c(1, TRUE, "apple")
+typeof(v1) # "character", alle verdiene blir til tekst
+v2 <- c(1, TRUE, 2.5)
+typeof(v2) # "double", alle verdiene blir til numeriske verdier
+```
+
+### Eksplicit typekonvertering
+Du kan eksplisitt endre datatypen med funksjoner som `as.numeric()` eller `as.character()`:
+```{r}
+x <- c("1", "2", "3")
+as.numeric(x) # Konverterer til numerisk
+```
+
+### Når soft-typing kan være et problem
+Soft-typing kan noen ganger føre til uventede resultater. Hvis en numerisk vektor utilsiktet inneholder en tekstverdi, kan hele vektoren konverteres til `character`:
+```{r}
+v <- c(1, 2, "three")
+typeof(v) # "character"
+```
+
+For å unngå dette, vær oppmerksom på hva som legges inn i vektorer.
+
+---
+
+# Vektorer og funksjoner
+
+Vektorer i R har innebygde funksjoner som gjør det mulig å jobbe med alle elementene i en vektor uten å bruke løkker. Dette kalles **vektoriserte operasjoner**.
+
+Eksempler:
+```{r}
+v <- c(1, 2, 3, 4, 5)
+v * 2        # Multipliserer hvert element med 2
+v + c(1, 2)  # Elementvis addition (resirkulering)
+sum(v)       # Summerer alle elementene i vektoren
+```
+
+Vektorisering gjør koden i R både raskere og enklere å lese.
+
+---
+
+# Funksjonell programmering i R
+
+Et sentralt prinsipp i R er at funksjoner brukes **på** variabler i stedet for at variabler har egne metoder. Dette skiller seg fra objektorienterte språk der variabler (eller objekter) har innebygde metoder. I R er funksjoner selvstendige enheter som utfører operasjoner på data. For eksempel, i stedet for å skrive `"hello".len()` som man ville gjort i et objektorientert språk, bruker R en funksjon som `length()` for å operere på variabelen:
+
+```{r}
+x <- c("apple", "banana", "cherry")
+length(x) # Returnerer antall elementer i vektoren
+nchar(x) # Returnerer antall karakterer i hvert element
+```
+
+Dette gjør koden enklere og mer modulær, siden funksjoner kan kombineres og gjenbrukes på tvers av ulike datatyper og strukturer.
+
+---
+
+# Lister og Data Frames i R
+
+## Lister
+
+Lister er en fleksibel datastruktur i R som kan inneholde elementer av ulike typer, inkludert andre lister og data frames. Dette gjør lister til et kraftig verktøy for å organisere data som ikke har en ensartet struktur.
+
+### Opprette og bruke lister
+Lister opprettes med `list()`-funksjonen:
+
+```{r}
+my_list <- list(
+  name = "Alice",
+  age = 30,
+  scores = c(95, 88, 92),
+  details = list(height = 170, weight = 65)
+)
+my_list
+```
+
+Elementene i en liste kan hentes ut med `$` eller dobbeltsubsetting `[[`:
+```{r}
+my_list$name       # "Alice"
+my_list[["scores"]] # c(95, 88, 92)
+```
+
+Lister kan inneholde alt fra numeriske verdier til funksjoner og andre komplekse datastrukturer, noe som gjør dem svært fleksible.
+
+---
+
+## Data Frames
+
+En data frame er en tabell-lignende datastruktur i R der hver kolonne er en vektor, og alle kolonner har samme antall rader. Data frames er ideelle for å håndtere data med flere variabler, der hver variabel har én datatype.
+
+### Opprette og bruke data frames
+Data frames kan opprettes med `data.frame()`:
+```{r}
+df <- data.frame(
+  name = c("Alice", "Bob", "Charlie"),
+  age = c(30, 25, 35),
+  score = c(95, 88, 92)
+)
+df
+```
+
+Du kan hente ut kolonner med `$` eller firkantparenteser `[]`:
+```{r}
+df$name      # Kolonnen "name"
+df[1, ]      # Første rad
+df[, "score"] # Kolonnen "score"
+```
+
+---
+
+### Forskjeller mellom lister og data frames
+- **Lister** kan inneholde elementer av forskjellige lengder og typer.
+- **Data frames** er strukturerte som tabeller, der hver kolonne er en vektor, og alle kolonner må ha samme lengde.
+
+---
+

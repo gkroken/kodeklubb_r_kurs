@@ -1,0 +1,345 @@
+---
+title: "R workshop - del 2"
+author: "Gakro"
+format: 
+  html:
+    toc: TRUE
+---
+
+# Del 2: Pakker, CRAN og Tidyverse
+
+## Pakker og CRAN
+
+En av R's største styrker er det omfattende økosystemet av pakker som utvider funksjonaliteten. R-pakker er samlinger av funksjoner, data og dokumentasjon som er designet for å løse spesifikke problemer.
+
+- **CRAN** (Comprehensive R Archive Network) er det sentrale repository for R-pakker.
+- For å installere en pakke, bruker man `install.packages()`.
+- Når en pakke er installert, kan den lastes inn i arbeidsområdet med `library()`.
+
+Eksempel:
+```{r}
+# Installer og last inn tidyverse og palmerpenguins
+install.packages("tidyverse")
+install.packages("palmerpenguins")
+library(tidyverse)
+library(palmerpenguins)
+```
+
+`penguins`-datasettet fra `palmerpenguins` gir oss informasjon om forskjellige pingvinarter og deres egenskaper. Vi bruker dette datasettet som eksempel for datahåndtering i Tidyverse.
+
+---
+
+# Datahåndtering med Tidyverse
+
+Tidyverse tilbyr enkle og kraftige funksjoner for datahåndtering. Her bruker vi `penguins`-datasettet for å illustrere.
+
+---
+
+## 1. `select`: Velg og gi nytt navn til kolonner
+
+Med `select()` kan du velge bestemte kolonner og gi dem nye navn. Dette er nyttig for å fokusere på relevante variabler og gjøre kolonnenavn mer forståelige.
+
+Eksempel:
+```{r}
+selektert_penguins <- penguins %>% 
+  select(
+    art = species,
+    flippelengde = flipper_length_mm,
+    kroppsmasse = body_mass_g
+  )
+
+selektert_penguins
+```
+
+Fordeler:
+- Forenkler datasettet ved å fjerne irrelevante kolonner.
+- Gjør kolonnenavnene mer lesbare.
+
+---
+
+## 2. `filter`: Filtrer rader basert på betingelser
+
+Med `filter()` kan du velge rader som oppfyller bestemte kriterier. Dette er nyttig for å analysere en spesifikk undergruppe.
+
+Eksempel:
+```{r}
+filtrert_penguins <- penguins %>% 
+  filter(
+    flipper_length_mm > 200
+  )
+
+filtrert_penguins
+```
+
+Her filtrerer vi ut pingviner med flippelengder over 200 mm.
+
+---
+
+## 3. `mutate`: Opprett nye variabler
+
+Med `mutate()` kan du lage nye kolonner basert på eksisterende data. Dette er nyttig for beregninger og transformasjoner.
+
+Eksempel:
+```{r}
+muterte_penguins <- penguins %>% 
+  mutate(
+    flipper_ratio = flipper_length_mm / body_mass_g
+  ) %>% 
+  select(
+    species,
+    island,
+    flipper_length_mm,
+    body_mass_g,
+    flipper_ratio
+  )
+
+muterte_penguins
+```
+
+Her opprettes en ny variabel, `flipper_ratio`, som representerer forholdet mellom flippelengde og kroppsmasse.
+
+---
+
+## 4. `group_by` og `summarise`: Grupper og oppsummer data
+
+Du kan gruppere data med `group_by()` og beregne oppsummeringer med `summarise()`. Dette brukes ofte til å få oversikt over egenskaper innenfor grupper.
+
+Eksempel:
+```{r}
+oppsummert_penguins <- penguins %>% 
+  group_by(species) %>% 
+  summarise(
+    mean_flipper_length = mean(flipper_length_mm, na.rm = TRUE),
+    mean_body_mass = mean(body_mass_g, na.rm = TRUE),
+    n_rows = n()
+  )
+
+oppsummert_penguins
+```
+
+Her grupperer vi pingvinene etter art og beregner gjennomsnittlig flippelengde og kroppsmasse, samt antall rader i hver gruppe.
+
+---
+
+## 5. Pivotering av data: Langt vs bredt format
+
+### Langt format vs bredt format
+
+- **Langt format** (tidy format): Hver rad representerer én observasjon, og variabler splittes over kolonner. Dette formatet foretrekkes av datamaskiner fordi det er mer fleksibelt for dataanalyse og visualisering.
+- **Bredt format**: Sammenlignbare verdier plasseres i samme rad, ofte mer lesbart for mennesker, spesielt i tabeller.
+
+### Eksempel: Beregning av gjennomsnittlig kroppsmasse
+
+La oss beregne gjennomsnittlig kroppsmasse for hver kombinasjon av art og kjønn:
+```{r}
+beregnet_snitt_masse <- penguins %>% 
+  select(
+    species, sex, body_mass_g
+  ) %>% 
+  summarise(
+    mean_body_mass = mean(body_mass_g, na.rm = TRUE),
+    .by = c(species, sex)
+  )
+
+beregnet_snitt_masse
+```
+
+### Krysstabeller med `pivot_wider`
+
+For å lage en krysstabell der kjønn vises som kolonner, bruker vi `pivot_wider`:
+```{r}
+kroppsmasse_krysstabell <- beregnet_snitt_masse %>% 
+  pivot_wider(
+    names_from = sex,
+    values_from = mean_body_mass
+  )
+
+print(kroppsmasse_krysstabell)
+```
+
+### Transformasjon tilbake til langt format med `pivot_longer`
+
+Hvis vi ønsker å gjøre dataene klare for videre analyse, kan vi transformere tilbake til langt format:
+```{r}
+kroppsmasse_krysstabell %>% 
+  pivot_longer(
+    cols = c("male", "female", "NA"),
+    names_to = "sex", 
+    values_to = "mean_body_mass"
+  )
+```
+
+---
+
+# Visualisering med ggplot2
+
+R er kjent for sine kraftige verktøy for visualisering, som gir datavitere og analytikere muligheten til å utforske og kommunisere data effektivt. Blant disse verktøyene er `ggplot2` en av de mest populære, takket være sin fleksibilitet, elegante syntaks, og implementasjonen av "grammar of graphics". Dette systemet gjør det mulig å bygge komplekse grafer lagvis, ved å spesifisere data, estetikk, og geometriske elementer.
+
+Her skal vi bruke `penguins`-datasettet for å utforske forholdet mellom flippelengde og kroppsmasse. Vi starter med en enkel tom graf og legger gradvis til elementer for å oppnå en informativ og estetisk tiltalende visualisering.
+
+---
+
+## Steg 1: Opprette en tom graf
+
+Den første komponenten i en `ggplot`-graf er selve grunnlaget. Vi bruker `ggplot()`-funksjonen til å definere datasettet vi jobber med. Dette oppretter en tom graf som fungerer som et lerret for videre lag.
+
+```{r}
+library(ggplot2)
+library(ggthemes)
+ggplot(data = penguins)
+```
+
+Dette genererer et tomt plott fordi vi ennå ikke har spesifisert hvordan dataene skal representeres.
+
+---
+
+## Steg 2: Legg til estetikk (x og y)
+
+Neste steg er å definere hvordan dataene skal kobles til grafen. Dette gjøres med estetikken `aes()`, der vi spesifiserer hvilke variabler som skal vises på x- og y-aksen.
+
+```{r}
+ggplot(data = penguins, mapping = aes(x = flipper_length_mm, y = body_mass_g))
+```
+
+Nå ser vi aksene merket med `flipper_length_mm` og `body_mass_g`, men fortsatt ingen datapunkter.
+
+---
+
+## Steg 3: Legg til datapunkter med `geom_point`
+
+For å representere dataene på grafen, legger vi til et lag med `geom_point()`. Dette lager et scatterplot hvor hver observasjon vises som et punkt.
+
+```{r}
+ggplot(data = penguins, mapping = aes(x = flipper_length_mm, y = body_mass_g)) +
+  geom_point()
+```
+
+Grafen viser nå datapunktene, og vi kan begynne å utforske sammenhengen mellom flippelengde og kroppsmasse.
+
+---
+
+## Steg 4: Legg til farger basert på art
+
+For å skille mellom de tre pingvinartene, bruker vi estetikk-argumentet `color` i `aes()`. Dette gir hvert datapunkt en farge basert på arten.
+
+```{r}
+ggplot(data = penguins, mapping = aes(x = flipper_length_mm, y = body_mass_g)) +
+  geom_point(aes(color = species))
+```
+
+Nå representeres de tre pingvinartene (Adelie, Chinstrap, Gentoo) med forskjellige farger, noe som gjør grafen mer informativ.
+
+---
+
+## Steg 5: Legg til en trendlinje med `geom_smooth`
+
+For å visualisere trenden mellom variablene, legger vi til et lag med `geom_smooth()`. Vi spesifiserer en lineær modell (`method = "lm"`) for å vise den lineære sammenhengen.
+
+```{r}
+ggplot(data = penguins, mapping = aes(x = flipper_length_mm, y = body_mass_g)) +
+  geom_point(aes(color = species)) +
+  geom_smooth(method = "lm")
+```
+
+Trendlinjen gir oss innsikt i forholdet mellom flippelengde og kroppsmasse.
+
+---
+
+## Steg 6: Legg til form basert på art
+
+Farge er ikke alltid nok til å skille kategorier, spesielt for fargeblinde. Vi kan forbedre grafen ved å legge til en ny estetikk: `shape`. Dette gir datapunktene forskjellige former basert på arten.
+
+```{r}
+ggplot(data = penguins, mapping = aes(x = flipper_length_mm, y = body_mass_g)) +
+  geom_point(aes(color = species, shape = species)) +
+  geom_smooth(method = "lm")
+```
+
+Grafen blir nå enda mer lesbar ved å bruke både farge og form for å skille artene.
+
+---
+
+## Steg 7: Forbedre etiketter og utseende
+
+For å gjøre grafen mer informativ og visuelt tiltalende, legger vi til titler, akseetiketter, og bruker en fargeblind-vennlig palett.
+
+```{r}
+ggplot(data = penguins, mapping = aes(x = flipper_length_mm, y = body_mass_g)) +
+  geom_point(aes(color = species, shape = species)) +
+  geom_smooth(method = "lm") +
+  labs(
+    title = "Body mass and flipper length",
+    subtitle = "Dimensions for Adelie, Chinstrap, and Gentoo Penguins",
+    x = "Flipper length (mm)", y = "Body mass (g)",
+    color = "Species", shape = "Species"
+  ) +
+  scale_color_colorblind()
+```
+
+Med dette er grafen langt mer leselig, og vi ser en klar sammenheng mellom vekt og flipperstørrelse.
+
+---
+
+Med disse stegene har vi gått fra en tom graf til en fullverdig visualisering som kombinerer farge, form og kontekst for å kommunisere data effektivt.
+
+
+---
+
+# Oppgave: Utforskning av kjønn og kroppsmasse
+
+Målet med denne oppgaven er å lage en Quarto-rapport der du analyserer og visualiserer forholdet mellom kjønn, kroppsmasse og raten mellom flipperlengde og kroppsmasse i `penguins`-datasettet. Du vil også få muligheten til å håndtere manglende data ved å bruke clustering.
+
+---
+
+## Del 1: Start Quarto-dokumentet
+
+1. Opprett en ny Quarto-fil.
+2. Gi dokumentet en passende tittel og legg til en introduksjon som beskriver målet med analysen.
+3. Sørg for å laste inn de nødvendige pakkene:
+   ```{r}
+   library(tidyverse)
+   library(palmerpenguins)
+   ```
+
+---
+
+## Del 2: Analyser forholdet mellom kjønn og kroppsmasse
+
+1. Bruk `group_by()` og `summarise()` for å finne gjennomsnittlig kroppsmasse for hver kombinasjon av art og kjønn.
+   - Ta hensyn til manglende verdier med `na.rm = TRUE`.
+   - Visualiser resultatene med en søylegraf (`geom_bar()`) eller et punktdiagram (`geom_point()`).
+
+2. Reflekter over resultatene:
+   - Er det en tydelig forskjell i kroppsmasse mellom kjønnene?
+   - Hvordan varierer dette mellom artene?
+
+---
+
+## Del 3: Utforsk raten mellom flipperlengde og kroppsmasse
+
+1. Opprett en ny variabel i datasettet som representerer forholdet mellom flipperlengde og kroppsmasse:
+   ```{r}
+   penguins <- penguins %>% 
+     mutate(flipper_mass_ratio = flipper_length_mm / body_mass_g)
+   ```
+
+2. Bruk `ggplot2` til å visualisere forholdet mellom denne raten og kjønn:
+   - Lag et scatterplot med `species` som farge eller form.
+   - Legg til en trendlinje for å identifisere mønstre.
+
+---
+
+## Del 4: Håndtere manglende data i `sex`
+
+`sex`-variabelen inneholder manglende verdier. For å impute disse verdiene kan du bruke clustering for å lage en kvalifisert gjetning basert på andre variabler som `flipper_length_mm` og `body_mass_g`.
+
+### Hint: Clustering med GPT
+
+Spør gpt om hjelp med clustering av data. Be om måter å visualisere dataene på.
+
+---
+
+# Bonusoppgave
+
+Lag en interaktiv visualisering med `shiny` hvor brukeren kan justere hvilke variabler som skal analyseres (f.eks. velge mellom `body_mass_g`, `flipper_mass_ratio`, eller en annen variabel) og visualisere resultatene i sanntid.
+
